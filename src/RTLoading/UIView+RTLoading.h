@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "RTLoadingIndicatorView.h"
+#import "Views/RTLoadingIndicator/RTLoadingIndicatorView.h"
 
 @interface UIView (RTLoading)
 
