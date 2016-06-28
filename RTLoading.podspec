@@ -19,6 +19,7 @@ Pod::Spec.new do |s|
 
   s.source       = { :git => "https://github.com/RTILab/RTLoading.git", :branch => "master", :tag => s.version.to_s }
 
-  s.source_files  = "src/RTLoading"
+    s.source_files  = "src/RTLoading"
+    s.source_files  = "src/RTLoading/Views/RTloadingIndicator"
 
 end
