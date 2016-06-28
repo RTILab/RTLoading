@@ -5,6 +5,13 @@ RTLoading is a extension which allow easy add loading indicator into any view.
 
 # Usage
 ```objective-c
+
+#import <UIView+RTLoading.h>
+
+```
+##### Methods
+
+```objective-c
 /*
  * set configuration of loading view
  * if was set nil then will set default value
