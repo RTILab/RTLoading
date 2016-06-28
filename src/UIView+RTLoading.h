@@ -1,10 +1,17 @@
-#RTLoading
-RTLoading is a extension which allow easy add loading indicator into any view.
+//
+//  UIView+PlaceHolderView.h
+//  mosobleirc
+//
+//  Created by RTI Lab on 02.03.16.
+//  Copyright © 2016 RTILab LLC. All rights reserved.
+//
 
-<img src="https://raw.githubusercontent.com/RTILab/RTLoading/master/images/image.gif">"
+#import <UIKit/UIKit.h>
+#import "RTLoadingIndicatorView.h"
 
-# Usage
-```objective-c
+@interface UIView (RTLoading)
+
+#pragma mark - LoadingView
 /*
  * set configuration of loading view
  * if was set nil then will set default value
@@ -40,22 +47,5 @@ RTLoading is a extension which allow easy add loading indicator into any view.
  * hide loading view without animation
  */
 - (void)rt_fastHideLoading;
-```
 
-
-## Install
-
-RTDataSourceAdapter is available through CocoaPods. To install it, simply add the following line to your Podfile:
-
-```objective-c
-pod install 'RTLoading'
-```
-In case you don’t want to use CocoaPods - just copy the folder src to your Xcode project.
-
-### Maintainers
-- [Morozov Ivan](https://github.com/Allui)
-- [RTILab](https://github.com/RTILab)
-
-## License
-
-RTLoading is available under the MIT license. See the LICENSE file for more info.
+@end
