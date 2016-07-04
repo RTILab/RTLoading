@@ -18,11 +18,11 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
         
-    [UIView rt_configWithImage:nil // <- set indicator image
-                indicatorColor:[UIColor redColor]
-                     areaColor:[UIColor whiteColor]
-               areaBorderColor:[UIColor redColor]
-                backgrounColor:[UIColor lightGrayColor]];
+    [UIView rt_configWithImage:nil                                                   
+                indicatorColor:[UIColor whiteColor]
+                     areaColor:[UIColor colorWithRed:0.0 green:0.7804 blue:0.5843 alpha:1.0]
+               areaBorderColor:nil
+                backgrounColor:[UIColor colorWithRed:0.1608 green:0.1333 blue:0.2549 alpha:1.0]];
     
     return YES;
 }

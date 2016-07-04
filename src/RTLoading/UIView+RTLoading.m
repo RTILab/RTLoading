@@ -45,7 +45,7 @@
 
 - (UIColor *)areaViewBorderColor {
     if (_areaViewBorderColor == nil) {
-        _areaViewBorderColor = [UIColor lightGrayColor];
+        _areaViewBorderColor = [UIColor clearColor];
     }
     return _areaViewBorderColor;
 }

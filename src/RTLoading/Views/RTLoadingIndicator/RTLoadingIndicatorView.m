@@ -18,6 +18,9 @@
 
 - (void)borderColor:(UIColor *)color {
     self.areaView.layer.borderColor = color.CGColor;
+    if ([color isEqual:[UIColor clearColor]]) {
+        self.areaView.layer.borderWidth = 0;
+    }
 }
 
 @end
