@@ -64,7 +64,7 @@ RTLoading is a extension which allow easy add loading indicator into any view.
  *  Hide loading view without animation
  */
 - (void)rt_fastHideLoading;
-
+```
 
 ## Install
 
