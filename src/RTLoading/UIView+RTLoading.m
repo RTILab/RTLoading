@@ -21,6 +21,8 @@
 @property (strong, nonatomic) UIColor *backgroundColor;
 @property (strong, nonatomic) UIColor *areaViewColor;
 @property (strong, nonatomic) UIColor *areaViewBorderColor;
+@property (strong, nonatomic) UIView *custom;
+@property (copy, nonatomic) RTLoadingAction action;
 
 @end
 
@@ -71,17 +73,19 @@
 
 static char RTLoadingView;
 static char RTLoading;
+static char RTIndicator;
 
 @interface UIView (RTLoadingProperties)
 
-@property (strong, nonatomic, readonly) UIView *_Nullable rt_loadingView;
-@property (strong, nonatomic, readonly) RTLoadingIndicatorView *_Nullable rt_loading;
+    @property (strong, nonatomic, readonly) UIView *_Nullable rt_loadingView;
+    @property (strong, nonatomic, readonly) UIView *_Nullable rt_loading;
+    @property (strong, nonatomic, readonly) UIView *_Nullable rt_indicator;
 
 @end
 
 @implementation UIView (RTLoadingProperties)
 
-@dynamic rt_loadingView, rt_loading;
+@dynamic rt_loadingView, rt_loading, rt_indicator;
 
 - (void)setRt_loadingView:(UIView *)rt_loadingView
 {
@@ -97,7 +101,7 @@ static char RTLoading;
     return objc_getAssociatedObject(self, &RTLoadingView);
 }
 
-- (void)setRt_loading:(RTLoadingIndicatorView *)rt_loading
+- (void)setRt_loading:(UIView *)rt_loading
 {
     [self willChangeValueForKey:@"RTLoadingIndicatorView"];
     objc_setAssociatedObject(self, &RTLoading,
@@ -106,9 +110,23 @@ static char RTLoading;
     [self didChangeValueForKey:@"RTLoadingIndicatorView"];
 }
 
-- (RTLoadingIndicatorView *)rt_loading
+- (UIView *)rt_loading
 {
     return objc_getAssociatedObject(self, &RTLoading);
+}
+    
+- (void)setRt_indicator:(UIView *)rt_loading
+{
+    [self willChangeValueForKey:@"RTIndicator"];
+    objc_setAssociatedObject(self, &RTIndicator,
+                             rt_loading,
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self didChangeValueForKey:@"RTIndicator"];
+}
+    
+- (UIView *)rt_indicator
+{
+    return objc_getAssociatedObject(self, &RTIndicator);
 }
 
 @end
@@ -138,7 +156,18 @@ static char RTLoading;
     if (backgrounColor) [RTPropertiesContainer shared].backgroundColor = backgrounColor;
 }
 
-
++ (void)rt_configWithView:(UIView *_Nonnull)view
+                 areaColor:(UIColor *_Nullable)areaColor
+           areaBorderColor:(UIColor *_Nullable)areaBorderColor
+           backgrounColor:(UIColor *_Nullable)backgrounColor
+                   action:(RTLoadingAction _Nullable)action
+{
+    if (areaColor) [RTPropertiesContainer shared].areaViewColor = areaColor;
+    if (areaBorderColor) [RTPropertiesContainer shared].areaViewBorderColor = areaBorderColor;
+    if (backgrounColor) [RTPropertiesContainer shared].backgroundColor = backgrounColor;
+    [RTPropertiesContainer shared].custom = view;
+    [RTPropertiesContainer shared].action = action;
+}
 
 - (void)rt_showLoading
 {
@@ -146,7 +175,38 @@ static char RTLoading;
           indicatorColor:nil
                areaColor:nil
          areaBorderColor:nil
-          backgrounColor:nil];
+          backgrounColor:nil
+              customView:nil
+                  action:nil];
+}
+
+- (void)rt_showLoading:(UIImage *)image
+        indicatorColor:(UIColor *)indicatorColor
+             areaColor:(UIColor *)areaColor
+       areaBorderColor:(UIColor *)areaBorderColor
+        backgrounColor:(UIColor *)backgrounColor {
+    [self rt_showLoading:image
+          indicatorColor:indicatorColor
+               areaColor:areaColor
+         areaBorderColor:areaBorderColor
+          backgrounColor:backgrounColor
+              customView:nil
+                  action:nil];
+}
+
+
+- (void)rt_showLoading:(UIView *)custom
+             areaColor:(UIColor *)areaColor
+       areaBorderColor:(UIColor *)areaBorderColor
+        backgrounColor:(UIColor *)backgrounColor
+                action:(RTLoadingAction)action{
+    [self rt_showLoading:nil
+          indicatorColor:nil
+               areaColor:areaColor
+         areaBorderColor:areaBorderColor
+          backgrounColor:backgrounColor
+              customView:custom
+                  action:action];
 }
 
 - (void)rt_showLoading:(UIImage *)image
@@ -154,12 +214,15 @@ static char RTLoading;
              areaColor:(UIColor *)areaColor
        areaBorderColor:(UIColor *)areaBorderColor
         backgrounColor:(UIColor *)backgrounColor
+            customView:(UIView *)custom
+                action:(RTLoadingAction)action
 {
     if (self.rt_loadingView) {
         if ([self.rt_loadingView.superview isEqual:self]) return;
  
         [self.rt_loadingView removeFromSuperview];
         self.rt_loadingView = nil;
+        self.rt_indicator = nil;
     }
     
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -171,28 +234,39 @@ static char RTLoading;
                                                  name:UIApplicationWillTerminateNotification
                                                object:nil];
     
-    self.rt_loading = [[[NSBundle mainBundle] loadNibNamed:@"RTLoadingIndicatorView"
-                                                     owner:self
-                                                   options:nil] objectAtIndex:0];
+    self.rt_loading = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 60, 60)];
+    self.rt_loading.layer.cornerRadius = 10;
+    self.rt_loading.layer.borderWidth = 2;
     
-    id property = (image) ? image : [RTPropertiesContainer shared].indicatorImage;
-    [self.rt_loading.IndicatorImage setImage:property];
-    
-    property = (areaColor) ? areaColor : [RTPropertiesContainer shared].areaViewColor;
-    self.rt_loading.areaView.backgroundColor = property;
-    
-    property = (areaBorderColor) ? areaBorderColor : [RTPropertiesContainer shared].areaViewBorderColor;
-    [self.rt_loading borderColor:property];
-    
-    property = (indicatorColor) ? indicatorColor : [RTPropertiesContainer shared].indicatorColor;
-    
-    if (property && ![property isEqual:[UIColor clearColor]]) {
-        self.rt_loading.IndicatorImage.image = [self.rt_loading.IndicatorImage.image
-                                                                       imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        self.rt_loading.IndicatorImage.tintColor = property;
+    id property = (custom) ? custom : [RTPropertiesContainer shared].custom;
+    if (property == nil) {
+        self.rt_indicator = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 60, 60)];
+        UIImageView *idicatorView = [[UIImageView alloc] initWithFrame:CGRectMake(20, 20, 20, 20)];
+        [self.rt_loading addSubview:self.rt_indicator];
+        [self.rt_indicator addSubview:idicatorView];
+        
+        property = (image) ? image : [RTPropertiesContainer shared].indicatorImage;
+        [idicatorView setImage:property];
+        
+        property = (indicatorColor) ? indicatorColor : [RTPropertiesContainer shared].indicatorColor;
+        
+        if (property && ![property isEqual:[UIColor clearColor]]) {
+            idicatorView.image = [idicatorView.image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            idicatorView.tintColor = property;
+        }
+        
+    } else {
+        UIView *c = property;
+        [self.rt_loading addSubview:c];
     }
     
-    self.rt_loadingView = [[UIView alloc] initWithFrame:self.frame];
+    property = (areaColor) ? areaColor : [RTPropertiesContainer shared].areaViewColor;
+    self.rt_loading.backgroundColor = property;
+    
+    property = (areaBorderColor) ? areaBorderColor : [RTPropertiesContainer shared].areaViewBorderColor;
+    self.rt_loading.layer.borderColor = ((UIColor *)property).CGColor;
+    
+    self.rt_loadingView = [[UIView alloc] initWithFrame:self.bounds];
     [self.rt_loadingView.layer setZPosition:100];
     
     property = (backgrounColor) ? backgrounColor : [RTPropertiesContainer shared].backgroundColor;
@@ -201,39 +275,37 @@ static char RTLoading;
     [self.rt_loadingView setTranslatesAutoresizingMaskIntoConstraints:NO];
     [self.rt_loading setTranslatesAutoresizingMaskIntoConstraints:NO];
     
-    __weak __typeof(self) weakSelf = self;
+    [self.rt_loadingView addSubview:self.rt_loading];
+    [self addSubview:self.rt_loadingView];
     
-    [weakSelf.rt_loadingView addSubview:weakSelf.rt_loading];
-    [weakSelf addSubview:weakSelf.rt_loadingView];
+    if (self.rt_indicator) {
+        [self.rt_indicator rt_startAnimating];
+    }
     
-    [weakSelf applyConstrants:weakSelf target:weakSelf.rt_loadingView];
+    self.rt_loadingView.alpha = 1;
+    self.rt_loading.alpha = 0;
     
-    id top = weakSelf.rt_loadingView;
-    
-    [top addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[view]|"
-                                                                options: NSLayoutFormatAlignAllCenterX
-                                                                metrics:nil
-                                                                  views:@{@"view" : weakSelf.rt_loading}]];
-    
-    [top addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[view]|"
-                                                                options:NSLayoutFormatAlignAllCenterY
-                                                                metrics:nil
-                                                                  views:@{@"view" : weakSelf.rt_loading}]];
-    
-    [weakSelf.rt_loading.IndicatorImage rt_startAnimating];
-    
-    weakSelf.rt_loadingView.alpha = 1;
-    weakSelf.rt_loading.alpha = 0;
+    UIWindow *w = UIApplication.sharedApplication.keyWindow;
+    self.rt_loading.center = [w convertPoint:w.center toView:self.rt_loadingView];
     
     [UIView animateWithDuration:0.3
                      animations:^{
-                         weakSelf.rt_loading.alpha = 1;
+                         self.rt_loading.alpha = 1;
                      }];
+    RTLoadingAction currentAction = (action) ? action : [RTPropertiesContainer shared].action;
+    if (currentAction) {
+        currentAction(RTLoadingStateBegin);
+    }
 }
 
 
 - (void)rt_hideLoading
 {
+    RTLoadingAction currentAction = [RTPropertiesContainer shared].action;
+    if (currentAction) {
+        currentAction(RTLoadingStateEnd);
+        [[RTPropertiesContainer shared].custom removeFromSuperview];
+    }
     [self removeListener:nil];
     if (self.rt_loadingView) {
         [UIView animateWithDuration:0.3
@@ -252,6 +324,11 @@ static char RTLoading;
 
 - (void)rt_fastHideLoading
 {
+    RTLoadingAction currentAction = [RTPropertiesContainer shared].action;
+    if (currentAction) {
+        currentAction(RTLoadingStateEnd);
+        [[RTPropertiesContainer shared].custom removeFromSuperview];
+    }
     [self removeListener:nil];
     if (self.rt_loadingView) {
         [self.rt_loadingView removeFromSuperview];
@@ -263,8 +340,13 @@ static char RTLoading;
 
 - (void)appDidBecomeActive:(NSNotification*)note
 {
-    if (self.rt_loadingView) {
-        [self.rt_loading.IndicatorImage rt_startAnimating];
+    if (self.rt_loadingView && self.rt_indicator) {
+        [self.rt_indicator rt_startAnimating];
+    
+        RTLoadingAction currentAction = [RTPropertiesContainer shared].action;
+        if (currentAction) {
+            currentAction(RTLoadingStateRestore);
+        }
     }
 }
 
@@ -277,46 +359,6 @@ static char RTLoading;
                                                     name:UIApplicationWillTerminateNotification
                                                   object:nil];
     
-}
-
-- (void)applyConstrants:(UIView *)parent target:(UIView *)target
-{
-    if (!target) return;
-    // Width constraint
-    [parent addConstraint:[NSLayoutConstraint constraintWithItem:target
-                                                     attribute:NSLayoutAttributeWidth
-                                                     relatedBy:NSLayoutRelationEqual
-                                                        toItem:parent
-                                                     attribute:NSLayoutAttributeWidth
-                                                    multiplier:1
-                                                      constant:0]];
-    
-    // Height constraint
-    [parent addConstraint:[NSLayoutConstraint constraintWithItem:target
-                                                     attribute:NSLayoutAttributeHeight
-                                                     relatedBy:NSLayoutRelationEqual
-                                                        toItem:parent
-                                                     attribute:NSLayoutAttributeHeight
-                                                    multiplier:1
-                                                      constant:0]];
-    
-    // Center horizontally
-    [parent addConstraint:[NSLayoutConstraint constraintWithItem:target
-                                                     attribute:NSLayoutAttributeCenterX
-                                                     relatedBy:NSLayoutRelationEqual
-                                                        toItem:parent
-                                                     attribute:NSLayoutAttributeCenterX
-                                                    multiplier:1.0
-                                                      constant:0.0]];
-    
-    // Center vertically
-    [parent addConstraint:[NSLayoutConstraint constraintWithItem:target
-                                                     attribute:NSLayoutAttributeCenterY
-                                                     relatedBy:NSLayoutRelationEqual
-                                                        toItem:parent
-                                                     attribute:NSLayoutAttributeCenterY
-                                                    multiplier:1.0
-                                                      constant:0.0]];
 }
 
 #pragma mark - Animating
