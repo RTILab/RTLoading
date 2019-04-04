@@ -1,4 +1,4 @@
-#RTLoading
+# RTLoading
 RTLoading is a extension which allow easy add loading indicator into any view.
 
 <img src="https://github.com/RTILab/RTLoading/blob/master/Images/image.gif" width="300">
